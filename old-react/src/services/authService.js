@@ -30,7 +30,7 @@ export const registerRequest = async (email, username, password) => {
         // lee el text plain
         const errorMessage = await response.text();
 
-        console.log("Mensaje de Java:", errorMessage);
+        console.log("Mensaje de Java:", errorMessage); // Aquí verás "Email already exists"
 
         //lanza mensaje del backend o mensaje generico
         throw new Error(errorMessage || "Error en registro");
