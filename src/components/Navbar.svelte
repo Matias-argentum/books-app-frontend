@@ -54,5 +54,6 @@
     nav {
         border-bottom: #ccc6b4 1px solid;
         padding: 0 1rem;
+        height: 4rem;
     }
 </style>

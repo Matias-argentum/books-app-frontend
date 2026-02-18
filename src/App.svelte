@@ -9,7 +9,7 @@
 
 <div style="width: 100%;">
   <Navbar />
-  <main class="container">
+  <main>
     {#if router.currentPath === "/"}
       <Home />
     {:else if router.currentPath === "/login"}
