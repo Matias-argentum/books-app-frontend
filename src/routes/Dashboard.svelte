@@ -3,9 +3,18 @@
     import BookModal from "../components/BookModal.svelte";
     import Sidebar from "../components/Sidebar.svelte";
     import Toast from "../components/Toast.svelte";
-    import { getBooks, postBook, putBook } from "../services/bookService";
+    import {
+        getBooks,
+        postBook,
+        putBook,
+        deleteBook,
+        patchBook,
+    } from "../services/bookService";
     import { getAuthors } from "../services/authorService";
     import { auth } from "../stores/auth.svelte";
+    import AlertModal from "../components/AlertModal.svelte";
+    import ChangeStateModal from "../components/ChangeStateModal.svelte";
+    import { router } from "../router.svelte";
 
     let isLoading = $state(false);
     let errorMessage = $state("");
@@ -17,12 +26,19 @@
     let showModal = $state(false);
     let selectedBook = $state(null);
 
+    let showDeleteAlert = $state(false);
+    let showChangeStateModal = $state(false);
+
     const onSave = async (payload) => {
         if (selectedBook) {
             // Es un PUT (payload + selectedBook.id)
             console.log("Editando...", selectedBook.id, payload);
             try {
-                const result = await putBook(auth.user.token, payload, selectedBook.id);
+                const result = await putBook(
+                    auth.user.token,
+                    payload,
+                    selectedBook.id,
+                );
             } catch (error) {
                 console.log(error);
                 errorMessage = error.message;
@@ -46,6 +62,31 @@
         }
     };
 
+    const onDelete = async (id) => {
+        console.log("aca vamos a llamar a la api con el libro aborrar: ", id);
+        try {
+            const result = await deleteBook(auth.user.token, id);
+        } catch (error) {
+            errorMessage = error.message;
+        } finally {
+            showDeleteAlert = false;
+            await fetchBooks();
+            await fetchAuthors();
+        }
+    };
+
+    const onEdit = async (id, status) => {
+        try {
+            const result = await patchBook(auth.user.token, status, id);
+        } catch (error) {
+            errorMessage = error.message;
+        } finally {
+            showChangeStateModal = false;
+            await fetchBooks();
+            await fetchAuthors();
+        }
+    };
+
     const openCreateModal = () => {
         selectedBook = null;
         showModal = true;
@@ -54,6 +95,16 @@
     const openEditModal = (book) => {
         selectedBook = book;
         showModal = true;
+    };
+
+    const openDeleteAlert = (book) => {
+        selectedBook = book;
+        showDeleteAlert = true;
+    };
+
+    const openEditStateModal = (book) => {
+        selectedBook = book;
+        showChangeStateModal = true;
     };
 
     const fetchBooks = async () => {
@@ -91,6 +142,12 @@
         fetchAuthors();
     });
 
+    $effect(()=>{
+        if (!auth.user) {
+            router.goto("/");
+        }
+    })
+
     //$inspect(authors);
 </script>
 
@@ -108,7 +165,12 @@
 
             <div class="books-grid">
                 {#each books as book (book.id)}
-                    <BookCard {book} openModal={openEditModal} />
+                    <BookCard
+                        {book}
+                        openModal={openEditModal}
+                        openAlert={openDeleteAlert}
+                        {openEditStateModal}
+                    />
                 {:else}
                     <p>No hay libros</p>
                 {/each}
@@ -127,6 +189,20 @@
     onClose={() => (showModal = false)}
     bookToEdit={selectedBook}
     {authors}
+/>
+
+<AlertModal
+    {onDelete}
+    isOpen={showDeleteAlert}
+    onClose={() => (showDeleteAlert = false)}
+    bookToDelete={selectedBook}
+/>
+
+<ChangeStateModal
+    {onEdit}
+    isOpen={showChangeStateModal}
+    onClose={() => (showChangeStateModal = false)}
+    bookToEdit={selectedBook}
 />
 
 <style>

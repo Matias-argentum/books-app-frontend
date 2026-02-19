@@ -60,3 +60,41 @@ export const putBook = async (token, payload, bookId) =>{
 
     return response.json();
 }
+
+export const patchBook = async (token, status, bookId) =>{
+    const response = await fetch(`${API_URL}/books/${bookId}/status?status=${status}`,
+        {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
+
+    if (!response.ok) {
+        const errorMessage = await response.text();
+
+        throw new Error(errorMessage || "Error updating book status");
+    }
+
+    return response.json();
+}
+
+export const deleteBook = async (token, bookId) =>{
+    const response = await fetch(`${API_URL}/books/${bookId}`,
+        {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
+
+    if (!response.ok) {
+        const errorMessage = await response.text();
+
+        throw new Error(errorMessage || "Error deleting book");
+    }
+
+    return response.json();
+}

@@ -2,7 +2,7 @@
     import BookActions from "./BookActions.svelte";
     import { fade } from 'svelte/transition';
 
-    let { book, openModal } = $props();
+    let { book, openModal, openAlert, openEditStateModal } = $props();
 
     // svelte-ignore state_referenced_locally
         let dateObj = book.addedAt ? new Date(book.addedAt) : new Date();
@@ -30,7 +30,7 @@
         <sub>{book.publisher}</sub>
     </div>
     <footer>
-        <BookActions {book} {openModal} />
+        <BookActions {book} {openModal} {openAlert} {openEditStateModal} />
     </footer>
 </article>
 

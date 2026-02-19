@@ -1,7 +1,7 @@
 <script>
     import { IconEdit, IconRefresh, IconTrash } from "@tabler/icons-svelte";
 
-    let { book, openModal } = $props();
+    let { book, openModal, openAlert, openEditStateModal } = $props();
 </script>
 
 <div class="actions-container">
@@ -18,6 +18,10 @@
         class="action-btn status" 
         data-tooltip="Cambiar estado"
         aria-label="Cambiar estado"
+        onclick={()=> {
+            console.log("Se abre el modal para editar: ", book?.title);
+            openEditStateModal(book)
+            }}
     >
         <IconRefresh size={20} />
     </button>
@@ -26,6 +30,10 @@
         class="action-btn delete" 
         data-tooltip="Eliminar libro"
         aria-label="Eliminar"
+        onclick={()=> {
+            console.log("Se abre el alerta para borrar: ", book?.title);
+            openAlert(book)
+            }}
     >
         <IconTrash size={20} />
     </button>
