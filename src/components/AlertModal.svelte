@@ -1,11 +1,16 @@
 <script>
-    let { isOpen, onDelete, onClose, bookToDelete } = $props();
+    // Cambiamos bookToDelete por itemToDelete
+    let { isOpen, onDelete, onClose, itemToDelete } = $props();
+
+    // Variable reactiva que detecta qué nombre mostrar
+    let displayName = $derived(
+        itemToDelete?.title || `${itemToDelete?.name} ${itemToDelete?.lastName}`
+    );
 
     const handleConfirmation = () => {
-        
-        console.log("Acabo de confirmar que quiero borrar", bookToDelete.title);
-        onDelete(bookToDelete.id);
-
+        console.log("Confirmando eliminación de:", displayName);
+        // Ejecutamos la función onDelete (que vendrá del Dashboard)
+        onDelete(itemToDelete.id);
     };
 </script>
 
@@ -15,17 +20,24 @@
             <button aria-label="Close" class="close" onclick={onClose}></button>
             <h6>Eliminar</h6>
         </header>
-        <h5>Vas a borrar {bookToDelete?.title} ¿Seguro?</h5>
+        
+        <h5>Vas a borrar a <strong>{displayName}</strong>. ¿Seguro?</h5>
+        
         <footer>
             <div class="grid">
                 <button
                     type="button"
                     class="secondary outline"
                     onclick={onClose}
-                    >Cancelar
+                >
+                    Cancelar
                 </button>
-                <button type="button" class="primary outline" onclick={handleConfirmation}
-                    >Borrar
+                <button 
+                    type="button" 
+                    class="primary outline" 
+                    onclick={handleConfirmation}
+                >
+                    Borrar
                 </button>
             </div>
         </footer>

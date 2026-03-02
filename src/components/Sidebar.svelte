@@ -1,37 +1,67 @@
 <script>
-    import { 
-        IconBooks, 
-        IconCheck, 
-        IconBook2, 
-        IconShoppingBagHeart, 
-        IconSparkles, 
-        IconPlus
-
+    import {
+        IconBooks,
+        IconCheck,
+        IconBook2,
+        IconShoppingBagHeart,
+        IconSparkles,
+        IconPlus,
     } from "@tabler/icons-svelte";
+    import { auth } from "../stores/auth.svelte";
 
-    let { setFilter, openModal } = $props();
+    let { setFilter, openModal, activeView } = $props();
 </script>
 
 <aside>
     <nav>
         <ul>
+            {#if auth.user.roles.includes("ROLE_ADMIN")}
+                <li>
+                    <button
+                        class="ghost"
+                        onclick={() => setFilter("", "books")}
+                    >
+                        <IconBooks size={22} /> <span>Todos</span>
+                    </button>
+                </li>
+                <li>
+                    <button
+                        class="ghost"
+                        onclick={() => setFilter("", "authors")}
+                    >
+                        <IconBooks size={22} /> <span>Gestionar Autores</span>
+                    </button>
+                </li>
+            {/if}
             <li>
-                <button class="ghost" onclick={() => setFilter('my-books')}>
-                    <IconBooks size={22} /> <span>Todos</span>
+                <button
+                    class="ghost"
+                    onclick={() => setFilter("/my-books", "books")}
+                >
+                    <IconBooks size={22} /> <span>Mis Libros</span>
                 </button>
             </li>
             <li>
-                <button class="ghost" onclick={ () => setFilter('read')}>
+                <button
+                    class="ghost"
+                    onclick={() => setFilter("/read", "books")}
+                >
                     <IconCheck size={22} /> <span>Leídos</span>
                 </button>
             </li>
             <li>
-                <button class="ghost" onclick={ () => setFilter('reading')}>
+                <button
+                    class="ghost"
+                    onclick={() => setFilter("/reading", "books")}
+                >
                     <IconBook2 size={22} /> <span>Leyendo</span>
                 </button>
             </li>
             <li>
-                <button class="ghost" onclick={ () => setFilter('wishlist')}>
+                <button
+                    class="ghost"
+                    onclick={() => setFilter("/wishlist", "books")}
+                >
                     <IconShoppingBagHeart size={22} /> <span>Wishlist</span>
                 </button>
             </li>
@@ -39,7 +69,10 @@
         <hr />
         <ul>
             <li>
-                <button class="ai-button" onclick={() => setFilter('recommendations')}>
+                <button
+                    class="ai-button"
+                    onclick={() => setFilter("recommendations", "ai")}
+                >
                     <IconSparkles size={22} /> <span>IA Recomendación</span>
                 </button>
             </li>
@@ -47,12 +80,15 @@
         <hr />
         <ul>
             <li>
-                <button class="add-button" onclick={() => openModal()}>
+                <button
+                    class="add-button"
+                    onclick={() => openModal(activeView)}
+                >
                     <IconPlus size={22} /> <span>Agregar</span>
                 </button>
             </li>
         </ul>
-    </nav> 
+    </nav>
 </aside>
 
 <style>

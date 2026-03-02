@@ -15,10 +15,23 @@
     import AlertModal from "../components/AlertModal.svelte";
     import ChangeStateModal from "../components/ChangeStateModal.svelte";
     import { router } from "../router.svelte";
+    import AuthorCard from "../components/AuthorCard.svelte";
+    import {
+        postAuthor,
+        putAuthor,
+        deleteAuthor,
+    } from "../services/authorService";
+    import AuthorModal from "../components/AuthorModal.svelte";
 
+    import { getAiRecommendations } from "../services/aiService";
+    import AiSection from "../components/AiSection.svelte";
+
+    let aiRecommendations = $state([]);
+
+    let activeView = $state("books");
     let isLoading = $state(false);
     let errorMessage = $state("");
-    let endpoint = $state("my-books");
+    let endpoint = $state("/my-books");
 
     let books = $state([]);
     let authors = $state([]);
@@ -28,6 +41,9 @@
 
     let showDeleteAlert = $state(false);
     let showChangeStateModal = $state(false);
+
+    let showAuthorModal = $state(false);
+    let selectedAuthor = $state(null);
 
     const onSave = async (payload) => {
         if (selectedBook) {
@@ -87,9 +103,14 @@
         }
     };
 
-    const openCreateModal = () => {
-        selectedBook = null;
-        showModal = true;
+    const openCreateModal = (view) => {
+        if (view === "authors") {
+            selectedAuthor = null;
+            showAuthorModal = true;
+        } else {
+            selectedBook = null;
+            showModal = true;
+        }
     };
 
     const openEditModal = (book) => {
@@ -105,6 +126,44 @@
     const openEditStateModal = (book) => {
         selectedBook = book;
         showChangeStateModal = true;
+    };
+
+    const onSaveAuthor = async (payload) => {
+        try {
+            if (selectedAuthor) {
+                await putAuthor(auth.user.token, payload, selectedAuthor.id);
+            } else {
+                await postAuthor(auth.user.token, payload);
+            }
+        } catch (error) {
+            errorMessage = error.message;
+        } finally {
+            showAuthorModal = false;
+            await fetchAuthors();
+        }
+    };
+
+    const onDeleteAuthor = async (id) => {
+        try {
+            await deleteAuthor(auth.user.token, id);
+        } catch (error) {
+            errorMessage = error.message;
+        } finally {
+            showDeleteAlert = false;
+            await fetchAuthors();
+        }
+    };
+
+    // Funciones para abrir modales de autor
+    const openAuthorEdit = (author) => {
+        selectedAuthor = author;
+        showAuthorModal = true;
+    };
+
+    const openAuthorDelete = (author) => {
+        selectedAuthor = author;
+        // Reutilizamos selectedBook para el AlertModal genérico o usamos selectedAuthor
+        showDeleteAlert = true;
     };
 
     const fetchBooks = async () => {
@@ -125,9 +184,23 @@
         errorMessage = "";
         try {
             const data = await getAuthors("authors", auth.user.token);
-            authors = data;
+            authors = data.sort((a, b) => a.lastName.localeCompare(b.lastName));
         } catch (error) {
             errorMessage = error.message;
+        } finally {
+            isLoading = false;
+        }
+    };
+
+    const fetchAi = async () => {
+        isLoading = true;
+        try {
+            const data = await getAiRecommendations(auth.user.token);
+            aiRecommendations = data.books;
+            console.log("Estado actualizado con:", aiRecommendations);
+        } catch (error) {
+            errorMessage = error.message;
+            activeView = "books";
         } finally {
             isLoading = false;
         }
@@ -142,38 +215,66 @@
         fetchAuthors();
     });
 
-    $effect(()=>{
+    $effect(() => {
+        if (activeView === "ai" && aiRecommendations.length === 0) {
+            fetchAi();
+        }
+    });
+
+    $effect(() => {
         if (!auth.user) {
             router.goto("/");
         }
-    })
+    });
 
     //$inspect(authors);
 </script>
 
 <div class="dashboard-wrapper">
     <Sidebar
-        setFilter={(newEndpoint) => (endpoint = newEndpoint)}
+        setFilter={(newEndpoint, view) => {
+            endpoint = newEndpoint;
+            activeView = view;
+        }}
         openModal={openCreateModal}
+        {activeView}
     />
 
     <main class="books-content" aria-busy={isLoading}>
         <div class="books-container">
             <header class="section-header">
-                <h2>Mi Biblioteca</h2>
+                <h2>
+                    {activeView == "books"
+                        ? "Mi Biblioteca"
+                        : "Gestion de autores"}
+                </h2>
             </header>
 
             <div class="books-grid">
-                {#each books as book (book.id)}
-                    <BookCard
-                        {book}
-                        openModal={openEditModal}
-                        openAlert={openDeleteAlert}
-                        {openEditStateModal}
-                    />
-                {:else}
-                    <p>No hay libros</p>
-                {/each}
+                {#if activeView === "books"}
+                    {#each books as book (book.id)}
+                        <BookCard
+                            {book}
+                            openModal={openEditModal}
+                            openAlert={openDeleteAlert}
+                            {openEditStateModal}
+                        />
+                    {:else}
+                        <p>No hay libros</p>
+                    {/each}
+                {:else if activeView == "authors"}
+                    {#each authors as author (author.id)}
+                        <AuthorCard
+                            {author}
+                            openModal={openAuthorEdit}
+                            openAlert={openAuthorDelete}
+                        />
+                    {:else}
+                        <p>No hay autores</p>
+                    {/each}
+                {:else if activeView === "ai"}
+                    <AiSection recommendations={aiRecommendations} />
+                {/if}
             </div>
         </div>
     </main>
@@ -191,11 +292,18 @@
     {authors}
 />
 
+<AuthorModal
+    isOpen={showAuthorModal}
+    onSave={onSaveAuthor}
+    onClose={() => (showAuthorModal = false)}
+    authorToEdit={selectedAuthor}
+/>
+
 <AlertModal
-    {onDelete}
     isOpen={showDeleteAlert}
     onClose={() => (showDeleteAlert = false)}
-    bookToDelete={selectedBook}
+    itemToDelete={activeView === "books" ? selectedBook : selectedAuthor}
+    onDelete={activeView === "books" ? onDelete : onDeleteAuthor}
 />
 
 <ChangeStateModal
